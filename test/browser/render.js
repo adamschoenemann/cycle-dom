@@ -190,7 +190,7 @@ describe('Rendering', function () {
       });
     });
 
-    it('should accept a view wrapping a custom element (#89)', function (done) {
+    it('should accept a view wrapping a VTree$ (#89)', function (done) {
       function app() {
         let number$ = Fixture89.makeModelNumber$();
         return {
@@ -198,9 +198,7 @@ describe('Rendering', function () {
         };
       }
       let [requests, responses] = Cycle.run(app, {
-        DOM: makeDOMDriver(createRenderTarget(), {
-          'my-element': Fixture89.myElement
-        })
+        DOM: makeDOMDriver(createRenderTarget())
       });
 
       responses.DOM.get(':root').skip(1).take(1).subscribe(function (root) {
@@ -221,7 +219,7 @@ describe('Rendering', function () {
       });
     });
 
-    it('should reject a view with custom element as the root of vtree$', function (done) {
+    it('should accept a view with VTree$ as the root of VTree', function (done) {
       function app() {
         let number$ = Fixture89.makeModelNumber$();
         return {
@@ -229,16 +227,23 @@ describe('Rendering', function () {
         };
       }
       let [requests, responses] = Cycle.run(app, {
-        DOM: makeDOMDriver(createRenderTarget(), {
-          'my-element': Fixture89.myElement
-        })
+        DOM: makeDOMDriver(createRenderTarget())
       });
-      responses.DOM.get(':root').subscribeOnError(function (err) {
-        assert.strictEqual(err.message,
-          'Illegal to use a Cycle custom element as the root of a View.'
-        );
-        responses.dispose();
-        done();
+      responses.DOM.get(':root').skip(1).take(1).subscribe(function (root) {
+        setTimeout(() => {
+          let myelement = root.querySelector('.myelementclass');
+          assert.notStrictEqual(myelement, null);
+          assert.strictEqual(myelement.tagName, 'H3');
+          assert.strictEqual(myelement.textContent, '123');
+        }, 100);
+        setTimeout(() => {
+          let myelement = root.querySelector('.myelementclass');
+          assert.notStrictEqual(myelement, null);
+          assert.strictEqual(myelement.tagName, 'H3');
+          assert.strictEqual(myelement.textContent, '456');
+          responses.dispose();
+          done();
+        }, 500);
       });
     });
 
